@@ -610,17 +610,34 @@ async def get_thread_state_at_checkpoint_post(
     Identical to the GET checkpoint endpoint but accepts the checkpoint
     configuration in the request body. Useful when the checkpoint namespace
     contains characters that are awkward in URL paths.
+
+    When ``checkpoint_id`` is omitted, behaves like ``GET /threads/{id}/state``:
+    ``langgraph.pregel.remote.RemoteGraph`` builds a checkpoint dict containing
+    only ``thread_id`` for latest-state fetches, and the LangGraph SDK POSTs
+    here without an id.
     """
     checkpoint = request.checkpoint
-    if not checkpoint.checkpoint_id:
-        raise HTTPException(400, "checkpoint_id is required in checkpoint configuration")
+    checkpoint_id = (checkpoint.checkpoint_id or "").strip()
+    if not checkpoint_id:
+        raw_ns = checkpoint.checkpoint_ns
+        checkpoint_ns: str | None = (
+            raw_ns.strip() if isinstance(raw_ns, str) and raw_ns.strip() else None
+        )
+        subgraphs_latest = bool(request.subgraphs) if request.subgraphs is not None else False
+        return await get_thread_state(
+            thread_id,
+            subgraphs=subgraphs_latest,
+            checkpoint_ns=checkpoint_ns,
+            user=user,
+            session=session,
+        )
 
     subgraphs = request.subgraphs
     checkpoint_ns = checkpoint.checkpoint_ns if checkpoint.checkpoint_ns else None
 
     output = await get_thread_state_at_checkpoint(
         thread_id,
-        checkpoint.checkpoint_id,
+        checkpoint_id,
         subgraphs,
         checkpoint_ns,
         user,

@@ -1,6 +1,7 @@
 {
   "dependencies": ["./examples"],
   "graphs": {
+    "deepagents": "./examples/deepagents_cli/graph.py:graph",
     "agent": "./examples/react_agent/graph.py:graph",
     "agent_hitl": "./examples/react_agent_hitl/graph.py:graph",
     "subgraph_agent": "./examples/subgraph_agent/graph.py:graph",
